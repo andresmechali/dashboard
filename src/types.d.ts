@@ -1,8 +1,3 @@
-declare module "*.csv" {
-  const content: DataItemRaw[];
-  export default content;
-}
-
 type DataItemRaw = {
   codigo_rechazo: string;
   descripcion_regla_fraude: string;
@@ -23,7 +18,7 @@ type CodigoRechazo = string;
 
 type DataItem = {
   id: number;
-  semana: number;
+  semana: string;
   usd_amount: number;
   estado: Estado;
   tipo_tarjeta: TipoTarjeta;
@@ -36,7 +31,7 @@ type DataItem = {
 type Filters = {
   estado?: Estado[];
   tipo_tarjeta?: TipoTarjeta[];
-  semana?: number[];
+  semana?: string[];
   codigoRechazo?: CodigoRechazo[];
   ultimoItentoDiario?: string[];
   nroCuenta?: string[];

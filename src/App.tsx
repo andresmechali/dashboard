@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   XAxis,
   YAxis,
@@ -8,15 +8,10 @@ import {
   Bar,
   TooltipProps,
 } from "recharts";
-import { Select } from "antd";
+import Papa from "papaparse";
+import { Select, Spin } from "antd";
 import "./App.css";
-import { data, filterData, formatNumber, getUniques } from "./utils.ts";
-
-const allWeeks = getUniques(data, "semana");
-const allNroComercio = getUniques(data, "nro_comercio");
-const allNroCuenta = getUniques(data, "nro_cuenta");
-const allReintento = ["0", "1"];
-const allTipoTarjeta: TipoTarjeta[] = ["debito", "credito"];
+import { filterData, formatNumber, getUniques, prepareData } from "./utils.ts";
 
 const CustomTooltip = ({
   active,
@@ -43,38 +38,60 @@ const CustomTooltip = ({
 };
 
 function App() {
-  const [filteredWeeks, setFilteredWeeks] = useState<number[]>(allWeeks);
-  const [filteredNroComercio, setFilteredNroComercio] =
-    useState<string[]>(allNroComercio);
-  const [filteredNroCuenta, setFilteredNroCuenta] =
-    useState<string[]>(allNroCuenta);
-  const [filteredReintento, setFilteredReintento] =
-    useState<string[]>(allReintento);
-  const [filteredTipoTarjeta, setFilteredTipoTarjeta] =
-    useState<TipoTarjeta[]>(allTipoTarjeta);
+  const [data, setData] = useState<DataItem[]>();
+  const [appliedFilters, setAppliedFilters] = useState<Filters>({});
+  const [allSemana, setAllSemana] = useState<string[]>([]);
+  const [allNroComercio, setAllNroComercio] = useState<string[]>([]);
+  const [allNroCuenta, setAllNroCuenta] = useState<string[]>([]);
+  const [allReintento, setAllReintento] = useState<string[]>([]);
+  const [allTipoTarjeta, setAllTipoTarjeta] = useState<TipoTarjeta[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const filteredData = useMemo(
-    () =>
-      filterData({
-        semana: filteredWeeks,
-        nroComercio: filteredNroComercio,
-        nroCuenta: filteredNroCuenta,
-        ultimoItentoDiario: filteredReintento,
-        tipo_tarjeta: filteredTipoTarjeta,
-      }),
-    [
-      filteredWeeks,
-      filteredNroComercio,
-      filteredNroCuenta,
-      filteredReintento,
-      filteredTipoTarjeta,
-    ],
-  );
+  useEffect(() => {
+    fetch("/datalarge.csv")
+      .then((response) => response.text())
+      .then((csvText) => {
+        Papa.parse<DataItemRaw>(csvText, {
+          complete: (result) => {
+            const preparedData = prepareData(result.data);
+            setData(preparedData);
+
+            const allSemana = getUniques(preparedData, "semana");
+            setAllSemana(allSemana);
+            const allNroComercio = getUniques(preparedData, "nro_comercio");
+            setAllNroComercio(allNroComercio);
+            const allNroCuenta = getUniques(preparedData, "nro_cuenta");
+            setAllNroCuenta(allNroCuenta);
+            const allReintento = ["0", "1"];
+            setAllReintento(allReintento);
+            const allTipoTarjeta: TipoTarjeta[] = ["debito", "credito"];
+            setAllTipoTarjeta(allTipoTarjeta);
+
+            setAppliedFilters({
+              semana: allSemana,
+              nroComercio: allNroComercio,
+              nroCuenta: allNroCuenta,
+              ultimoItentoDiario: allReintento,
+              tipo_tarjeta: allTipoTarjeta,
+            });
+
+            setLoading(false);
+          },
+          header: true,
+        });
+      });
+  }, []);
+
+  const filteredData = useMemo(() => {
+    if (data) {
+      return filterData(data, appliedFilters);
+    }
+  }, [data, appliedFilters]);
 
   const dataByWeek = useMemo(() => {
-    return filteredData.reduce<
+    return filteredData?.reduce<
       Record<
-        number,
+        string,
         {
           tpn: number;
           tpv: number;
@@ -119,6 +136,9 @@ function App() {
   }, [filteredData]);
 
   const dataWeekly = useMemo(() => {
+    if (!dataByWeek) {
+      return undefined;
+    }
     return Object.entries(dataByWeek).map(([semana, entry]) => ({
       semana,
       ...entry,
@@ -126,6 +146,10 @@ function App() {
       ratioTpv: entry.approTpv / entry.tpv,
     }));
   }, [dataByWeek]);
+
+  if (loading) {
+    return <Spin size="large" />;
+  }
 
   return (
     <>
@@ -225,11 +249,21 @@ function App() {
             mode="multiple"
             allowClear
             style={{ width: "300px" }}
-            defaultValue={filteredWeeks}
+            maxTagCount="responsive"
+            defaultValue={allSemana}
+            value={appliedFilters.semana}
             onChange={(newValue) => {
-              setFilteredWeeks(newValue);
+              setAppliedFilters({
+                ...appliedFilters,
+                semana: newValue.includes("Todos") ? allSemana : newValue,
+              });
             }}
-            options={allWeeks.map((week) => ({ value: week, label: week }))}
+            options={[{ value: "Todos", label: "Todos" }].concat(
+              allSemana.map((semana) => ({
+                value: semana,
+                label: semana,
+              })),
+            )}
           />
         </div>
 
@@ -240,14 +274,23 @@ function App() {
             mode="multiple"
             allowClear
             style={{ width: "300px" }}
-            defaultValue={filteredNroComercio}
+            maxTagCount="responsive"
+            defaultValue={allNroComercio}
+            value={appliedFilters.nroComercio}
             onChange={(newValue) => {
-              setFilteredNroComercio(newValue);
+              setAppliedFilters({
+                ...appliedFilters,
+                nroComercio: newValue.includes("Todos")
+                  ? allNroComercio
+                  : newValue,
+              });
             }}
-            options={allNroComercio.map((nroComercio) => ({
-              value: nroComercio,
-              label: nroComercio,
-            }))}
+            options={[{ value: "Todos", label: "Todos" }].concat(
+              allNroComercio.map((nroComercio) => ({
+                value: nroComercio,
+                label: nroComercio,
+              })),
+            )}
           />
         </div>
 
@@ -258,14 +301,21 @@ function App() {
             mode="multiple"
             allowClear
             style={{ width: "300px" }}
-            defaultValue={filteredNroCuenta}
+            maxTagCount="responsive"
+            defaultValue={allNroCuenta}
+            value={appliedFilters.nroCuenta}
             onChange={(newValue) => {
-              setFilteredNroCuenta(newValue);
+              setAppliedFilters({
+                ...appliedFilters,
+                nroCuenta: newValue.includes("Todos") ? allNroCuenta : newValue,
+              });
             }}
-            options={allNroCuenta.map((nroCuenta) => ({
-              value: nroCuenta,
-              label: nroCuenta,
-            }))}
+            options={[{ value: "Todos", label: "Todos" }].concat(
+              allNroCuenta.map((nroCuenta) => ({
+                value: nroCuenta,
+                label: nroCuenta,
+              })),
+            )}
           />
         </div>
       </div>
@@ -277,9 +327,13 @@ function App() {
             mode="multiple"
             allowClear
             style={{ width: "300px" }}
-            defaultValue={filteredReintento}
+            defaultValue={allReintento}
+            maxTagCount="responsive"
             onChange={(newValue) => {
-              setFilteredReintento(newValue);
+              setAppliedFilters({
+                ...appliedFilters,
+                ultimoItentoDiario: newValue,
+              });
             }}
             options={allReintento.map((reintento) => ({
               value: reintento,
@@ -294,9 +348,13 @@ function App() {
             mode="multiple"
             allowClear
             style={{ width: "300px" }}
-            defaultValue={filteredTipoTarjeta}
+            defaultValue={allTipoTarjeta}
+            maxTagCount="responsive"
             onChange={(newValue) => {
-              setFilteredTipoTarjeta(newValue);
+              setAppliedFilters({
+                ...appliedFilters,
+                tipo_tarjeta: newValue,
+              });
             }}
             options={allTipoTarjeta.map((tipoTarjeta) => ({
               value: tipoTarjeta,

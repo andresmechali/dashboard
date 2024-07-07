@@ -1,24 +1,26 @@
-import dataRaw from "./data.csv";
+export const prepareData = (dataRaw: DataItemRaw[]): DataItem[] =>
+  dataRaw.map((item, id) => ({
+    ...item,
+    id,
+    semana: item.semana,
+    usd_amount: Number(item.usd_amount),
+    estado: item.estado.trim() as Estado,
+    tipo_tarjeta: item.tipo_tarjeta.trim() as TipoTarjeta,
+    codigo_rechazo: item.codigo_rechazo as CodigoRechazo,
+  }));
 
-export const data: DataItem[] = dataRaw.map((item, id) => ({
-  ...item,
-  id,
-  semana: Number(item.semana),
-  usd_amount: Number(item.usd_amount),
-  estado: item.estado.trim() as Estado,
-  tipo_tarjeta: item.tipo_tarjeta.trim() as TipoTarjeta,
-  codigo_rechazo: item.codigo_rechazo as CodigoRechazo,
-}));
-
-export const filterData = ({
-  semana,
-  tipo_tarjeta,
-  estado,
-  codigoRechazo,
-  ultimoItentoDiario,
-  nroCuenta,
-  nroComercio,
-}: Filters) => {
+export const filterData = (
+  data: DataItem[],
+  {
+    semana,
+    tipo_tarjeta,
+    estado,
+    codigoRechazo,
+    ultimoItentoDiario,
+    nroCuenta,
+    nroComercio,
+  }: Filters,
+) => {
   return data.filter((item) => {
     if (semana && !semana.includes(item.semana)) {
       return false;
@@ -62,12 +64,9 @@ export const getUniques = <T, K extends keyof T>(
 };
 
 export const formatNumber = (n: number): string => {
-  // Check if the number is different from its integer part
   if (n !== Math.floor(n)) {
-    // If true, it has decimals, so apply toFixed
     return n.toFixed(2);
   } else {
-    // If false, return the number as a string without modification
     return n.toString();
   }
 };

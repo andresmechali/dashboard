@@ -48,7 +48,7 @@ function App() {
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    fetch("/datalarge.csv")
+    fetch("/data.csv")
       .then((response) => response.text())
       .then((csvText) => {
         Papa.parse<DataItemRaw>(csvText, {

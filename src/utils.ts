@@ -1,13 +1,28 @@
 export const prepareData = (dataRaw: DataItemRaw[]): DataItem[] =>
-  dataRaw.map((item, id) => ({
-    ...item,
-    id,
-    semana: item.semana,
-    usd_amount: Number(item.usd_amount),
-    estado: item.estado.trim() as Estado,
-    tipo_tarjeta: item.tipo_tarjeta.trim() as TipoTarjeta,
-    codigo_rechazo: item.codigo_rechazo as CodigoRechazo,
-  }));
+  dataRaw.map((item, id) => {
+    try {
+      return {
+        ...item,
+        id,
+        semana: item.semana,
+        usd_amount: Number(item.usd_amount),
+        estado: item.estado.trim() as Estado,
+        tipo_tarjeta: item.tipo_tarjeta.trim() as TipoTarjeta,
+        codigo_rechazo: item.codigo_rechazo as CodigoRechazo,
+      };
+    } catch {
+      console.log({ item });
+      return {
+        ...item,
+        id,
+        semana: item.semana,
+        usd_amount: Number(item.usd_amount),
+        estado: item.estado as Estado,
+        tipo_tarjeta: item.tipo_tarjeta.trim() as TipoTarjeta,
+        codigo_rechazo: item.codigo_rechazo as CodigoRechazo,
+      };
+    }
+  });
 
 export const filterData = (
   data: DataItem[],

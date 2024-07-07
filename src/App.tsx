@@ -53,6 +53,8 @@ function App() {
       .then((csvText) => {
         Papa.parse<DataItemRaw>(csvText, {
           complete: (result) => {
+            console.log(result.data);
+            console.log("---");
             const preparedData = prepareData(result.data);
             setData(preparedData);
 

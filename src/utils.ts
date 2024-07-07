@@ -60,3 +60,14 @@ export const getUniques = <T, K extends keyof T>(
 
   return array.sort((a, b) => (a > b ? 1 : b > a ? -1 : 0));
 };
+
+export const formatNumber = (n: number): string => {
+  // Check if the number is different from its integer part
+  if (n !== Math.floor(n)) {
+    // If true, it has decimals, so apply toFixed
+    return n.toFixed(2);
+  } else {
+    // If false, return the number as a string without modification
+    return n.toString();
+  }
+};

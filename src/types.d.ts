@@ -30,6 +30,7 @@ type DataItem = {
   codigo_rechazo: CodigoRechazo;
   nro_comercio: string;
   nro_cuenta: string;
+  es_ultimo_intento_diario: string;
 };
 
 type Filters = {

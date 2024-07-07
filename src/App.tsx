@@ -10,25 +10,31 @@ import {
 } from "recharts";
 import { Select } from "antd";
 import "./App.css";
-import { data, filterData, getUniques } from "./utils.ts";
+import { data, filterData, formatNumber, getUniques } from "./utils.ts";
 
 const allWeeks = getUniques(data, "semana");
 const allNroComercio = getUniques(data, "nro_comercio");
 const allNroCuenta = getUniques(data, "nro_cuenta");
+const allReintento = ["0", "1"];
+const allTipoTarjeta: TipoTarjeta[] = ["debito", "credito"];
 
 const CustomTooltip = ({
   active,
   payload,
   label,
-}: TooltipProps<number, number>) => {
+  type,
+}: TooltipProps<number, number> & { type: "tpn" | "tpv" }) => {
   if (active && payload && payload.length) {
+    const value = payload[0].payload[type];
+    const ratio =
+      type === "tpv"
+        ? payload[0].payload.ratioTpv
+        : payload[0].payload.ratioTpn;
     return (
       <div className="custom-tooltip">
         <p className="desc">Semana: {label}</p>
-        <p className="label">
-          {`tpn : ${payload[0].value?.toFixed(2)}` || "-"}
-        </p>
-        <p className="label">{`ratio tpn : ${payload[1].value ? (payload[1].value * 100).toFixed(2) : "-"}%`}</p>
+        <p className="label">{`${type} : ${formatNumber(value)}` || "-"}</p>
+        <p className="label">{`ratio ${type} : ${formatNumber(ratio * 100)}%`}</p>
       </div>
     );
   }
@@ -42,6 +48,10 @@ function App() {
     useState<string[]>(allNroComercio);
   const [filteredNroCuenta, setFilteredNroCuenta] =
     useState<string[]>(allNroCuenta);
+  const [filteredReintento, setFilteredReintento] =
+    useState<string[]>(allReintento);
+  const [filteredTipoTarjeta, setFilteredTipoTarjeta] =
+    useState<TipoTarjeta[]>(allTipoTarjeta);
 
   const filteredData = useMemo(
     () =>
@@ -49,8 +59,16 @@ function App() {
         semana: filteredWeeks,
         nroComercio: filteredNroComercio,
         nroCuenta: filteredNroCuenta,
+        ultimoItentoDiario: filteredReintento,
+        tipo_tarjeta: filteredTipoTarjeta,
       }),
-    [filteredNroComercio, filteredWeeks, filteredNroCuenta],
+    [
+      filteredWeeks,
+      filteredNroComercio,
+      filteredNroCuenta,
+      filteredReintento,
+      filteredTipoTarjeta,
+    ],
   );
 
   const dataByWeek = useMemo(() => {
@@ -125,7 +143,7 @@ function App() {
             bottom: 5,
           }}
         >
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<CustomTooltip type="tpv" />} />
           <XAxis dataKey="semana" />
           <YAxis yAxisId="tpvLeft" />
           <YAxis orientation="right" yAxisId="tpvRight" />
@@ -167,7 +185,7 @@ function App() {
             bottom: 5,
           }}
         >
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<CustomTooltip type="tpn" />} />
           <XAxis dataKey="semana" />
           <YAxis yAxisId="tpnLeft" />
           <YAxis orientation="right" yAxisId="tpnRight" />
@@ -247,6 +265,42 @@ function App() {
             options={allNroCuenta.map((nroCuenta) => ({
               value: nroCuenta,
               label: nroCuenta,
+            }))}
+          />
+        </div>
+      </div>
+      <div className="filters">
+        <div>
+          <div>Reintento</div>
+          <Select
+            id="select-reintento"
+            mode="multiple"
+            allowClear
+            style={{ width: "300px" }}
+            defaultValue={filteredReintento}
+            onChange={(newValue) => {
+              setFilteredReintento(newValue);
+            }}
+            options={allReintento.map((reintento) => ({
+              value: reintento,
+              label: reintento === "1" ? "SI" : "NO",
+            }))}
+          />
+        </div>
+        <div>
+          <div>Tipo tarjeta</div>
+          <Select
+            id="select-tipo-tarjeta"
+            mode="multiple"
+            allowClear
+            style={{ width: "300px" }}
+            defaultValue={filteredTipoTarjeta}
+            onChange={(newValue) => {
+              setFilteredTipoTarjeta(newValue);
+            }}
+            options={allTipoTarjeta.map((tipoTarjeta) => ({
+              value: tipoTarjeta,
+              label: tipoTarjeta.toUpperCase(),
             }))}
           />
         </div>

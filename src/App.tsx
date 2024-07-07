@@ -1,19 +1,34 @@
 import { useMemo, useState } from "react";
-import { XAxis, YAxis, Line, Tooltip, ComposedChart, Bar } from "recharts";
+import {
+  XAxis,
+  YAxis,
+  Line,
+  Tooltip,
+  ComposedChart,
+  Bar,
+  TooltipProps,
+} from "recharts";
 import { Select } from "antd";
 import "./App.css";
 import { data, filterData, getUniques } from "./utils.ts";
 
 const allWeeks = getUniques(data, "semana");
 const allNroComercio = getUniques(data, "nro_comercio");
+const allNroCuenta = getUniques(data, "nro_cuenta");
 
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+}: TooltipProps<number, number>) => {
   if (active && payload && payload.length) {
     return (
       <div className="custom-tooltip">
         <p className="desc">Semana: {label}</p>
-        <p className="label">{`tpn : ${payload[0].value.toFixed(2)}`}</p>
-        <p className="label">{`ratio tpn : ${(payload[1].value * 100).toFixed(2)}%`}</p>
+        <p className="label">
+          {`tpn : ${payload[0].value?.toFixed(2)}` || "-"}
+        </p>
+        <p className="label">{`ratio tpn : ${payload[1].value ? (payload[1].value * 100).toFixed(2) : "-"}%`}</p>
       </div>
     );
   }
@@ -25,11 +40,17 @@ function App() {
   const [filteredWeeks, setFilteredWeeks] = useState<number[]>(allWeeks);
   const [filteredNroComercio, setFilteredNroComercio] =
     useState<string[]>(allNroComercio);
+  const [filteredNroCuenta, setFilteredNroCuenta] =
+    useState<string[]>(allNroCuenta);
 
   const filteredData = useMemo(
     () =>
-      filterData({ semana: filteredWeeks, nroComercio: filteredNroComercio }),
-    [filteredNroComercio, filteredWeeks],
+      filterData({
+        semana: filteredWeeks,
+        nroComercio: filteredNroComercio,
+        nroCuenta: filteredNroCuenta,
+      }),
+    [filteredNroComercio, filteredWeeks, filteredNroCuenta],
   );
 
   const dataByWeek = useMemo(() => {
@@ -208,6 +229,24 @@ function App() {
             options={allNroComercio.map((nroComercio) => ({
               value: nroComercio,
               label: nroComercio,
+            }))}
+          />
+        </div>
+
+        <div>
+          <div>Nro cuenta</div>
+          <Select
+            id="select-nro-cuenta"
+            mode="multiple"
+            allowClear
+            style={{ width: "300px" }}
+            defaultValue={filteredNroCuenta}
+            onChange={(newValue) => {
+              setFilteredNroCuenta(newValue);
+            }}
+            options={allNroCuenta.map((nroCuenta) => ({
+              value: nroCuenta,
+              label: nroCuenta,
             }))}
           />
         </div>

@@ -10,20 +10,6 @@ export const data: DataItem[] = dataRaw.map((item, id) => ({
   codigo_rechazo: item.codigo_rechazo as CodigoRechazo,
 }));
 
-// const semanaUsdMap = data.reduce<Record<number, number>>((acc, curr) => {
-//   acc[curr.semana] = acc[curr.semana]
-//     ? acc[curr.semana] + curr.usd_amount
-//     : curr.usd_amount;
-//   return acc;
-// }, {});
-//
-// const dataSemanaUsd = Object.entries(semanaUsdMap).map(
-//   ([semana, usd_amount]) => ({
-//     semana,
-//     usd_amount,
-//   }),
-// );
-
 export const filterData = ({
   semana,
   tipo_tarjeta,
@@ -74,7 +60,3 @@ export const getUniques = <T, K extends keyof T>(
 
   return array.sort((a, b) => (a > b ? 1 : b > a ? -1 : 0));
 };
-
-console.log(getUniques(data, "nro_comercio"));
-
-// const allWeeks = getUniques(dataSemanaUsd, "semana");

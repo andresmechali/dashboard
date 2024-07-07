@@ -21,13 +21,15 @@ type Estado = "ANULADA" | "APROBADA" | "RECHAZADA";
 type TipoTarjeta = "debito" | "credito";
 type CodigoRechazo = string;
 
-type DataItem = DataItemRaw & {
+type DataItem = {
   id: number;
   semana: number;
   usd_amount: number;
   estado: Estado;
   tipo_tarjeta: TipoTarjeta;
   codigo_rechazo: CodigoRechazo;
+  nro_comercio: string;
+  nro_cuenta: string;
 };
 
 type Filters = {
